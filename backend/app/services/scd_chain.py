@@ -1,15 +1,112 @@
-"""__NAME__领域服务：字段、状态和动作来自业务配置，数据处理骨架由基类复用。"""
+"""拉链加工领域服务：闭链校验、重叠冲突检测、属性失效联动。"""
 from __future__ import annotations
 
+from datetime import date
+from typing import Any
+
 from app.services.base import BaseModuleService
+from app.store import store
 
 
 class ScdChainService(BaseModuleService):
     MODULE = "scd_chain"
     ENTITY = "拉链记录"
-    OPERATION_TERM = "校验"
     LIST_FIELDS = ["拉链编号", "所属维度", "代理键", "变更字段", "生效起日", "生效止日", "是否当前", "链上前序"]
     REQUIRED_FIELDS = ["拉链编号", "所属维度", "代理键"]
     STATUS_ORDER = ["加工中", "已闭链", "区间冲突", "已作废"]
     ACTION_RULES = {"闭链记录": "已闭链", "标记冲突": "区间冲突", "作废记录": "已作废"}
     NEGATIVE_ACTIONS = ["作废记录"]
+
+    def close_chain_record(
+        self, chain_id: str, end_date: str, predecessor_id: str | None = None,
+    ) -> tuple[bool, str, dict[str, Any] | None]:
+        """闭链操作：校验起止日期与链上前序收敛条件。"""
+        rows = store.rows(self.MODULE)
+        target = None
+        for r in rows:
+            if r.get("拉链编号") == chain_id:
+                target = r
+                break
+        if target is None:
+            return False, f"拉链 {chain_id} 不存在", None
+
+        try:
+            end_dt = date.fromisoformat(end_date)
+            start_dt = date.fromisoformat(target.get("生效起日", end_date))
+        except ValueError:
+            return False, f"日期格式无效", None
+
+        if end_dt < start_dt:
+            return False, f"生效止日 {end_date} 早于生效起日 {target.get('生效起日')}", None
+
+        if predecessor_id:
+            pred = None
+            for r in rows:
+                if r.get("拉链编号") == predecessor_id:
+                    pred = r
+                    break
+            if pred is None:
+                return False, f"链上前序 {predecessor_id} 不存在", None
+            pred_end = pred.get("生效止日", "")
+            if pred_end != target.get("生效起日", ""):
+                return False, (
+                    f"前序止日 {pred_end} 与当前起日 {target.get('生效起日')} 不首尾相接"
+                ), None
+            target["链上前序"] = predecessor_id
+
+        target["生效止日"] = end_date
+        target["是否当前"] = "否"
+        target["status"] = "已闭链"
+        target["pending"] = False
+        return True, f"拉链 {chain_id} 已闭链至 {end_date}", dict(target)
+
+    def detect_overlap_conflicts(self, dim_name: str) -> list[dict[str, Any]]:
+        """检测指定维度下的拉链区间重叠冲突。"""
+        rows = store.rows(self.MODULE)
+        dim_rows = sorted(
+            [r for r in rows if r.get("所属维度") == dim_name],
+            key=lambda r: r.get("生效起日", ""),
+        )
+        if len(dim_rows) < 2:
+            return []
+
+        conflicts: list[dict[str, Any]] = []
+        for i, a in enumerate(dim_rows):
+            a_start = a.get("生效起日", "")
+            a_end = a.get("生效止日", "")
+            for b in dim_rows[i + 1:]:
+                b_start = b.get("生效起日", "")
+                b_end = b.get("生效止日", "")
+                if a_end > b_start and a_start < b_end:
+                    conflicts.append({
+                        "chain_a": a.get("拉链编号"),
+                        "chain_b": b.get("拉链编号"),
+                        "a_interval": f"[{a_start}, {a_end}]",
+                        "b_interval": f"[{b_start}, {b_end}]",
+                        "overlap_start": max(a_start, b_start),
+                        "overlap_end": min(a_end, b_end),
+                    })
+        return conflicts
+
+    def mark_conflict(self, chain_id: str, reason: str) -> bool:
+        """标记拉链记录为区间冲突状态。"""
+        rows = store.rows(self.MODULE)
+        for r in rows:
+            if r.get("拉链编号") == chain_id:
+                r["status"] = "区间冲突"
+                r["abnormal"] = True
+                r["冲突原因"] = reason
+                return True
+        return False
+
+    def apply_attr_invalidation(
+        self, dim_name: str, attr_name: str, default_value: str,
+    ) -> int:
+        """属性失效联动：将指定维度属性失效后回填默认值并标记受影响的拉链。"""
+        rows = store.rows(self.MODULE)
+        count = 0
+        for r in rows:
+            if r.get("所属维度") == dim_name:
+                r["变更字段"] = f"{attr_name}→{default_value}（属性已失效）"
+                count += 1
+        return count

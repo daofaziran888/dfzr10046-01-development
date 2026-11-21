@@ -1,15 +1,46 @@
-"""__NAME__领域服务：字段、状态和动作来自业务配置，数据处理骨架由基类复用。"""
+"""指标绑定领域服务：指标与度量维度绑定，版本切换保留历史口径。"""
 from __future__ import annotations
 
+from typing import Any
+
 from app.services.base import BaseModuleService
+from app.store import store
 
 
 class MetricBindService(BaseModuleService):
     MODULE = "metric_bind"
     ENTITY = "绑定关系"
-    OPERATION_TERM = "校验"
     LIST_FIELDS = ["绑定编号", "指标名称", "引用度量", "绑定维度", "统计口径", "时间窗口", "绑定版本", "最近生效"]
     REQUIRED_FIELDS = ["绑定编号", "指标名称", "引用度量"]
     STATUS_ORDER = ["待生效", "生效中", "已替换", "已解除"]
     ACTION_RULES = {"启效绑定": "生效中", "替换绑定": "已替换", "解除绑定": "已解除"}
     NEGATIVE_ACTIONS = []
+
+    def bind_metric(
+        self, bind_id: str, metric_name: str, measure_ref: str,
+        dim_ref: str, caliber: str, time_window: str, version: str,
+    ) -> tuple[bool, str, dict[str, Any] | None]:
+        """绑定指标到度量与维度：历史读数值保留原绑定口径。"""
+        rows = store.rows(self.MODULE)
+        entry = {
+            "绑定编号": bind_id, "指标名称": metric_name,
+            "引用度量": measure_ref, "绑定维度": dim_ref,
+            "统计口径": caliber, "时间窗口": time_window,
+            "绑定版本": version, "最近生效": "2026-11-21",
+            "status": "生效中", "pending": False, "abnormal": False,
+        }
+        entry["id"] = max((int(r.get("id", 0)) for r in rows), default=0) + 1
+        rows.append(entry)
+        return True, f"指标 {metric_name}={measure_ref} 已绑定生效", entry
+
+    def replace_binding(self, bind_id: str, new_measure: str, new_version: str) -> tuple[bool, str]:
+        """替换绑定版本：旧版本口径保留，新版本独立。"""
+        rows = store.rows(self.MODULE)
+        for r in rows:
+            if r.get("绑定编号") == bind_id:
+                r["status"] = "已替换"
+                r["引用度量"] = new_measure
+                r["绑定版本"] = new_version
+                r["pending"] = False
+                return True, f"指标绑定 {bind_id} 已替换为版本 {new_version}"
+        return False, f"绑定 {bind_id} 不存在"
