@@ -1,4 +1,4 @@
-"""迟到事实领域服务：登记晚到数据、回补结论、受影响分区判定。"""
+"""迟到事实领域服务：登记校验晚到数据的回补水位，产出迟到记录数据集。"""
 from __future__ import annotations
 
 from datetime import date

@@ -1,4 +1,4 @@
-"""维度发布领域服务：版本化发布维度快照给下游。"""
+"""维度发布领域服务：版本化发布维度快照数据集给下游，校验导出版本不得静默替换。"""
 from __future__ import annotations
 
 from typing import Any

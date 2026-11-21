@@ -1,4 +1,4 @@
-"""建模审计领域服务：记录维度建模变更前后的值与影响下游数量。"""
+"""建模审计领域服务：记录校验维度建模变更前后的值和影响下游条目，产出审计条目数据集。"""
 from __future__ import annotations
 
 from typing import Any

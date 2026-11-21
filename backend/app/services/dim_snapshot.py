@@ -1,4 +1,4 @@
-"""维度快照领域服务：冻结维度全量状态。"""
+"""维度快照领域服务：冻结校验维度全量状态，产出快照版本数据集。"""
 from __future__ import annotations
 
 from typing import Any
