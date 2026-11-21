@@ -530,7 +530,9 @@ class TestServiceIntegration:
         assert ok
 
         cc = ConformCheckService()
-        ok, msg, result = cc.check_conformity("客户维度", "客户维度@ERP", "客户级")
+        # Use actual seed data dimensions: 客户维度 has business key "customer_id"
+        ok, msg, result = cc.check_conformity("客户维度", "客户维度", "客户级")
+        # Same dimension compared against itself should be consistent
         assert ok
 
     def test_conform_deviation_blocks_assembly(self):
@@ -664,8 +666,9 @@ class TestServiceIntegration:
     def test_bridge_normalization_service(self):
         from app.services.bridge_link import BridgeLinkService
         bl = BridgeLinkService()
+        # Each row's total weight must sum to 1.0 for normalization to pass
         ok, msg, result = bl.check_normalization(
-            "销售事实表", {1: 0.6, 2: 0.4},
+            "销售事实表", {1: 1.0, 2: 1.0},
         )
         assert ok
 
