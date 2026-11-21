@@ -1,4 +1,4 @@
-"""度量目录领域服务：维护度量计算表达式、聚合方式与单位声明。"""
+"""度量目录领域服务：维护校验度量计算表达式聚合方式的数据集，导入导出单位声明。"""
 from __future__ import annotations
 
 from typing import Any

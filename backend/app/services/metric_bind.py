@@ -1,4 +1,4 @@
-"""指标绑定领域服务：指标与度量维度绑定，版本切换保留历史口径。"""
+"""指标绑定领域服务：校验指标与度量的绑定关系数据集，版本切换保留历史口径和导出持久化。"""
 from __future__ import annotations
 
 from typing import Any

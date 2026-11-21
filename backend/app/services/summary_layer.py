@@ -1,4 +1,4 @@
-"""汇总层派生领域服务：从事实批次派生汇总条目，版本化绑定依赖批次。"""
+"""汇总层派生领域服务：校验事实批次派生汇总条目，版本化绑定依赖批次，产出汇总条目数据集。"""
 from __future__ import annotations
 
 from typing import Any
