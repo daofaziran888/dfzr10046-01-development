@@ -1,4 +1,4 @@
-"""多值桥接领域服务：事实与多值维度的桥接与权重归一管理。"""
+"""多值桥接领域服务：事实与多值维度桥接的权重归一校验管理，产出桥接条目数据集。"""
 from __future__ import annotations
 
 from typing import Any

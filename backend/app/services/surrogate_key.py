@@ -1,4 +1,4 @@
-"""代理键生成领域服务：键段分配、耗尽标记、回收策略。"""
+"""代理键生成领域服务：键段分配与耗尽标记，回收策略校验，产出键段分配表数据集。"""
 from __future__ import annotations
 
 from typing import Any

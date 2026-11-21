@@ -1,4 +1,4 @@
-"""退化维度领域服务：维护事实表上的退化维度字段。"""
+"""退化维度领域服务：维护事实表退化维度字段的数据集，校验聚合参与标记和版本变更。"""
 from __future__ import annotations
 
 from typing import Any

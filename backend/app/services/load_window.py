@@ -1,4 +1,4 @@
-"""装载窗口领域服务：装载区间管理、偏差检测、中断恢复。"""
+"""装载窗口领域服务：维护装载区间管理和偏差检测，校验水位推进，产出装载窗口数据集。"""
 from __future__ import annotations
 
 from typing import Any

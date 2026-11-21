@@ -1,4 +1,4 @@
-"""事实装配领域服务：代理键解析、外键命中率、桥接归一、粒度校验。"""
+"""事实装配领域服务：代理键解析与外键命中率校验，桥接权重归一和粒度校验，产出事实批次数据集。"""
 from __future__ import annotations
 
 from typing import Any

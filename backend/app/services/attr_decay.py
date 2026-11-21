@@ -1,4 +1,4 @@
-"""属性失效领域服务：维度属性失效判定与处置。"""
+"""属性失效领域服务：维度属性失效的校验判定与处置，产出失效条目数据集。"""
 from __future__ import annotations
 
 from typing import Any

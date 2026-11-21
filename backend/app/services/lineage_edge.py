@@ -1,4 +1,4 @@
-"""血缘关系领域服务：维度、事实与汇总层的血缘边管理。"""
+"""血缘关系领域服务：维护维度事实汇总层血缘边数据集，校验依赖传递和影响层级。"""
 from __future__ import annotations
 
 from typing import Any

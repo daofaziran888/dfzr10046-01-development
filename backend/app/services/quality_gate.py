@@ -1,4 +1,4 @@
-"""装配质量闸领域服务：阈值校验与阻断/放行决策。"""
+"""装配质量闸领域服务：阈值校验与阻断放行决策，校验命中率导入导出规则，产出质量闸条目数据集。"""
 from __future__ import annotations
 
 from typing import Any

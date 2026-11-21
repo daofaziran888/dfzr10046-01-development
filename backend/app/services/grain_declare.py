@@ -1,4 +1,4 @@
-"""粒度声明领域服务：声明事实表业务粒度和度量可加性。"""
+"""粒度声明领域服务：声明事实表业务粒度数据集和度量可加性，校验聚合转换规则。"""
 from __future__ import annotations
 
 from typing import Any

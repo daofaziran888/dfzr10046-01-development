@@ -1,4 +1,4 @@
-"""重跑任务领域服务：覆盖策略、血缘影响传递、重跑状态机。"""
+"""重跑任务领域服务：覆盖策略与血缘影响传递，调度重跑状态机和水位推进，产出重跑任务数据集。"""
 from __future__ import annotations
 
 from typing import Any

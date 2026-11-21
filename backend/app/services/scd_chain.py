@@ -1,4 +1,4 @@
-"""拉链加工领域服务：闭链校验、重叠冲突检测、属性失效联动。"""
+"""拉链加工领域服务：闭链校验与重叠冲突检测，属性失效联动转换，产出拉链记录数据集。"""
 from __future__ import annotations
 
 from datetime import date

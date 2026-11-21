@@ -1,4 +1,4 @@
-"""层级路径领域服务：维度层级上下级路径与跨越标记管理。"""
+"""层级路径领域服务：维护维度层级上下级路径的数据集，校验跨越标记和断裂检测。"""
 from __future__ import annotations
 
 from typing import Any
