@@ -31,16 +31,16 @@ class TestWatermark:
 
     def test_extract_not_ready(self):
         wm = WatermarkManager()
-        wm.register_extract("CRM", "2026-09-01")
-        ready, msg = wm.extract_ready("CRM", "2026-10-01")
+        wm.register_extract("ERP", "2026-09-01")
+        ready, msg = wm.extract_ready("ERP", "2026-10-01")
         assert not ready
         assert "落后" in msg
 
     def test_extract_becomes_ready(self):
         wm = WatermarkManager()
-        wm.register_extract("CRM", "2026-09-01")
-        wm.register_extract("CRM", "2026-10-15")
-        ready, msg = wm.extract_ready("CRM", "2026-10-01")
+        wm.register_extract("ERP", "2026-09-01")
+        wm.register_extract("ERP", "2026-10-15")
+        ready, msg = wm.extract_ready("ERP", "2026-10-01")
         assert ready
 
     def test_watermark_line_dirty_rows(self):
@@ -353,7 +353,7 @@ class TestIntegration:
     def test_link1_extract_to_publish(self):
         orch = PipelineOrchestrator()
         result = orch.link1_extract_to_publish(
-            system="CRM", dim_name="customer",
+            system="ERP", dim_name="customer",
             natural_keys=["nk-1", "nk-2", "nk-3"],
             snapshot_date="2026-10-01", version="v1",
         )
@@ -430,7 +430,7 @@ class TestIntegration:
     def test_link8_reprocess_cover(self):
         orch = PipelineOrchestrator()
         result = orch.link8_reprocess_cover(
-            task_id="RP-002", table="inventory",
+            task_id="RP-002", table="sales",
             start="2026-09-01", end="2026-10-01",
             strategy="整段替换", old_batch="BATCH-OLD",
             new_gate_values={"重跑后命中率": 0.92},
@@ -440,7 +440,7 @@ class TestIntegration:
     def test_link8_reprocess_gate_fail(self):
         orch = PipelineOrchestrator()
         result = orch.link8_reprocess_cover(
-            task_id="RP-003", table="inventory",
+            task_id="RP-003", table="sales",
             start="2026-09-01", end="2026-10-01",
             strategy="并存留痕", old_batch="BATCH-OLD",
             new_gate_values={"重跑后命中率": 0.70},
@@ -466,7 +466,7 @@ class TestIntegration:
 
     def test_all_links_return_audit_logs(self):
         orch = PipelineOrchestrator()
-        orch.link1_extract_to_publish("CRM", "customer", ["nk-1"], "2026-10-01", "v1")
+        orch.link1_extract_to_publish("ERP", "customer", ["nk-1"], "2026-10-01", "v1")
         orch.link9_stall_recover("ERP", "2026-10-15", 5)
         report = orch.status_report()
         assert len(report["audit_log"]) >= 2
@@ -483,7 +483,7 @@ class TestServiceIntegration:
         svc = DimEntryService()
         entry, msg = svc.register_dimension(
             "DIM-TEST", "测试维度", "test_key",
-            "CRM", "SCD2", "测试",
+            "ERP", "SCD2", "测试",
         )
         assert entry is not None
         assert entry["status"] == "已注册"
@@ -491,7 +491,7 @@ class TestServiceIntegration:
     def test_dim_dup_rejected(self):
         from app.services.dim_entry import DimEntryService
         svc = DimEntryService()
-        svc.register_dimension("DIM-DUP", "重复1", "k1", "CRM", "SCD2", "测试")
+        svc.register_dimension("DIM-DUP", "重复1", "k1", "ERP", "SCD2", "测试")
         entry2, msg2 = svc.register_dimension("DIM-DUP", "重复2", "k2", "ERP", "SCD1", "测试")
         assert entry2 is None
         assert "已存在" in msg2
@@ -502,14 +502,14 @@ class TestServiceIntegration:
         from app.store import store
 
         src = SrcExtractService()
-        src.extract_batch("CRM", "2026-10", "全量", 1000)
+        src.extract_batch("ERP", "2026-10", "全量", 1000)
         rows = store.rows("src_extract")
         for r in rows:
-            if r.get("来源系统") == "CRM":
+            if r.get("来源系统") == "ERP":
                 r["status"] = "已抽取"
 
         dim = DimEntryService()
-        entry, _ = dim.register_dimension("DIM-VAL", "验证维度", "vk1", "CRM", "SCD2", "测试")
+        entry, _ = dim.register_dimension("DIM-VAL", "验证维度", "vk1", "ERP", "SCD2", "测试")
         dim_rows = list(store.rows("dim_entry"))
         target = None
         for r in dim_rows:
@@ -518,7 +518,7 @@ class TestServiceIntegration:
                 break
         assert target is not None
         ok, _ = dim.validate_natural_key_source(target)
-        # CRM is in src_extract with status 已抽取, so should pass
+        # ERP is in src_extract with status 已抽取, so should pass
         assert ok
 
     def test_scd_close_then_conform_block(self):
@@ -598,7 +598,7 @@ class TestServiceIntegration:
         from app.services.quality_gate import QualityGateService
         qg = QualityGateService()
         ok, msg, entry = qg.evaluate_gate(
-            "QG-FAIL", "库存事实表", "外键命中率",
+            "QG-FAIL", "销售事实表", "外键命中率",
             0.80, 0.60, "批次级",
         )
         assert not ok
@@ -738,7 +738,7 @@ class TestServiceIntegration:
         from app.services.fact_assemble import FactAssembleService
 
         dim = DimEntryService()
-        dim.register_dimension("DIM-CHAIN", "链路测试", "chain_key", "CRM", "SCD2", "测试")
+        dim.register_dimension("DIM-CHAIN", "链路测试", "chain_key", "ERP", "SCD2", "测试")
 
         sk = SurrogateKeyService()
         key, msg = sk.allocate_key("客户维度", "chain_key")
@@ -753,7 +753,7 @@ class TestServiceIntegration:
         assert result["hit_rate"] >= 0.80
 
     def test_default_natural_key_source_check(self):
-        """默认种子数据维度校验：DIM-001 的自然键来源应为 CRM。"""
+        """默认种子数据维度校验：DIM-001 的自然键来源应为 ERP。"""
         from app.services.dim_entry import DimEntryService
         from app.store import store
 
@@ -802,7 +802,7 @@ class TestDataEdgeCases:
 
     def test_status_report_completeness(self):
         orch = PipelineOrchestrator()
-        orch.link1_extract_to_publish("CRM", "test", ["nk-1"], "2026-10-01", "v1")
+        orch.link1_extract_to_publish("ERP", "test", ["nk-1"], "2026-10-01", "v1")
         report = orch.status_report()
         for key in ["audit_log", "watermark", "scd", "fact", "quality", "reprocess", "snapshot"]:
             assert key in report, f"Missing key {key} in status_report"
