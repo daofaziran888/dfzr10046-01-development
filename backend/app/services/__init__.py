@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from app.services.base import BaseModuleService
 from app.services.dim_entry import DimEntryService
+from app.services.entry_handoff import EntryHandoffService
 from app.services.scd_chain import ScdChainService
 from app.services.surrogate_key import SurrogateKeyService
 from app.services.conform_check import ConformCheckService
@@ -27,6 +28,7 @@ from app.services.src_extract import SrcExtractService
 
 SERVICES: dict[str, BaseModuleService] = {
     "dim_entry": DimEntryService(),
+    "entry_handoff": EntryHandoffService(),
     "scd_chain": ScdChainService(),
     "surrogate_key": SurrogateKeyService(),
     "conform_check": ConformCheckService(),

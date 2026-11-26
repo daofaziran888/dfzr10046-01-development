@@ -18,6 +18,10 @@ export type ModuleMeta = {
   actions: string[]
   actionTargets: Record<string, string>
   metrics: string[]
+  /** 登记弹窗使用的字段子集；缺省时与 fields 一致。 */
+  createFields?: string[]
+  /** 需要附言（remark）的动作：动作名 → 输入框标签。 */
+  actionRemarks?: Record<string, string>
 }
 
 export type PageResult = {
@@ -30,6 +34,7 @@ export type PageResult = {
 export type ActionResult = {
   ok: boolean
   message: string
+  entry?: EntryRow
 }
 
 export type OverviewResult = {

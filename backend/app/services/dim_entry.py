@@ -16,6 +16,51 @@ class DimEntryService(BaseModuleService):
     ACTION_RULES = {"确认注册": "已注册", "合并维度": "已合并", "废弃维度": "已废弃"}
     NEGATIVE_ACTIONS = []
 
+    def create_entry(self, values: dict[str, Any]) -> tuple[dict[str, Any] | None, list[str]]:
+        """值班员提交维度：登记后把提交结果同步到代理键待办（建档交接）。
+
+        同一维度编号重复提交视为补正重提：更新原条目并让原回执回到待领取，
+        不产生第二份有效待办。
+        """
+        missing = [
+            field for field in self.REQUIRED_FIELDS
+            if not str(values.get(field) or "").strip()
+        ]
+        if missing:
+            return None, missing
+        code = str(values.get("维度编号") or "").strip()
+        rows = store.rows(self.MODULE)
+        existing = next((row for row in rows if row.get("维度编号") == code), None)
+        if existing is not None:
+            for field in self.LIST_FIELDS:
+                if field in values:
+                    existing[field] = values.get(field)
+            existing["status"] = "待注册"
+            existing["pending"] = True
+            _, sync_message, _ = self._sync_handoff(existing)
+            existing["交接同步"] = sync_message
+            return existing, []
+        entry: dict[str, Any] = {
+            "id": max((int(row.get("id", 0)) for row in rows), default=0) + 1,
+        }
+        entry.update({field: values.get(field) for field in self.LIST_FIELDS})
+        entry["status"] = self.STATUS_ORDER[0]
+        entry["pending"] = True
+        entry["abnormal"] = False
+        rows.append(entry)
+        _, sync_message, _ = self._sync_handoff(entry)
+        entry["交接同步"] = sync_message
+        return entry, []
+
+    @staticmethod
+    def _sync_handoff(dim_row: dict[str, Any]) -> tuple[dict[str, Any] | None, str, bool]:
+        """把维度提交结果同步到建档交接（代理键待办）。"""
+        from app.services import service_for
+        service = service_for("entry_handoff")
+        if service is None or not hasattr(service, "sync_from_dim_entry"):
+            return None, "建档交接模块未启用", False
+        return service.sync_from_dim_entry(dim_row)
+
     def validate_natural_key_source(self, dim_entry: dict[str, Any]) -> tuple[bool, str]:
         """校验自然键来源是否在已知源端系统登记过。"""
         source = dim_entry.get("自然键来源", "")
